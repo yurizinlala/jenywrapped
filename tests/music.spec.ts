@@ -107,15 +107,18 @@ test("cover shapes keep moving after entry", async ({ page }) => {
     before,
   );
 });
-test("sound cues only play on non-musical pages and obey mute", async ({
-  page,
-}) => {
+test("sound cues accompany music and obey mute", async ({ page }) => {
   await page.addInitScript(() => {
     const original = OscillatorNode.prototype.start;
     Object.assign(window, { cueStarts: 0 });
     OscillatorNode.prototype.start = function (...args) {
       (window as unknown as { cueStarts: number }).cueStarts++;
       return original.apply(this, args);
+    };
+    const originalNoise = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (...args) {
+      (window as unknown as { cueStarts: number }).cueStarts++;
+      return originalNoise.apply(this, args);
     };
   });
   const starts = () =>
@@ -140,7 +143,7 @@ test("sound cues only play on non-musical pages and obey mute", async ({
     "data-audio-status",
     "playing",
   );
-  expect(await starts()).toBe(beforeMusic);
+  await expect.poll(starts).toBeGreaterThan(beforeMusic);
 });
 test("counter freezes when document is hidden", async ({ page }) => {
   await page.goto("/?debug=1");
@@ -207,4 +210,80 @@ test("requested music stays hidden and alignment restarts on the final page", as
       expect(await previous.evaluate((el) => el.isConnected)).toBe(false);
     previous = await page.locator("[data-uri]").elementHandle();
   }
+});
+
+test("visual cues follow words, counter and photos, and stop on mute or hidden tab", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { sounds: [] });
+    window.addEventListener("jeny:sound-played", (event) => {
+      (window as unknown as { sounds: unknown[] }).sounds.push(
+        (event as CustomEvent).detail,
+      );
+    });
+  });
+  await page.route(apiURL, (r) =>
+    r.fulfill({ contentType: "application/javascript", body: apiScript }),
+  );
+  const sounds = () =>
+    page.evaluate(
+      () =>
+        (
+          window as unknown as {
+            sounds: { kind: string; scene: string; volume: number }[];
+          }
+        ).sounds,
+    );
+  await page.goto("/?debug=1");
+  await page.getByLabel("Ir para história").selectOption("2");
+  await expect
+    .poll(async () => (await sounds()).filter((s) => s.kind === "count").length)
+    .toBeGreaterThan(2);
+  await expect
+    .poll(async () => (await sounds()).some((s) => s.kind === "complete"))
+    .toBe(true);
+  await page.getByLabel("Ir para história").selectOption("3");
+  await expect
+    .poll(async () =>
+      (await sounds()).some((s) => s.scene === "cinema" && s.kind === "photo"),
+    )
+    .toBe(true);
+  await expect
+    .poll(async () =>
+      (await sounds()).some((s) => s.scene === "cinema" && s.kind === "word"),
+    )
+    .toBe(true);
+  const captured = await sounds();
+  expect(captured.find((s) => s.scene === "effect")!.volume).toBeLessThan(
+    captured.find((s) => s.scene === "cinema")!.volume,
+  );
+  await page.getByLabel("Desativar som", { exact: true }).click();
+  const muted = (await sounds()).length;
+  await page.getByLabel("Ir para história").selectOption("13");
+  await page.waitForTimeout(650);
+  expect((await sounds()).length).toBe(muted);
+  await page.getByLabel("Ativar som", { exact: true }).click();
+  await expect.poll(async () => (await sounds()).length).toBeGreaterThan(muted);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: true,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  const hidden = (await sounds()).length;
+  await page.waitForTimeout(600);
+  expect((await sounds()).length).toBe(hidden);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: false,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.getByLabel("Recomeçar do início", { exact: true }).click();
+  const stopped = (await sounds()).length;
+  await page.waitForTimeout(600);
+  expect((await sounds()).length).toBe(stopped);
 });

@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import { publicAsset } from "@/lib/assets.mjs";
 import { StoryAudioContext } from "./StoryAudio";
+import { emitStorySound } from "./SoundEffects";
 import { jenyWrapped } from "@/data/jeny";
 
 export function Burst({
@@ -162,9 +163,12 @@ export function Counter({
       duration: 1.8,
       ease: [0.12, 0.7, 0.22, 1],
       onUpdate: (latest) => {
-        if (element.current && !pausedRef.current)
+        if (element.current && !pausedRef.current) {
           element.current.textContent = String(Math.round(latest));
+          emitStorySound(element.current, "count", value ? latest / value : 1);
+        }
       },
+      onComplete: () => emitStorySound(element.current, "complete"),
     });
     controls.current = animation;
     if (pausedRef.current) animation.pause();

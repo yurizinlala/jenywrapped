@@ -27,9 +27,9 @@ Cada story fica na tela por tempo indefinido. Não existe avanço automático, b
 
 ## Som
 
-Stories sem música tocam um efeito curto ao entrar ou mudar de página. Os sons são sintetizados localmente com Web Audio, sem downloads ou faixas de terceiros. Os motivos e volumes ficam em `src/components/SoundEffects.tsx`. A capa inicial fica silenciosa até uma interação.
+Os stories têm efeitos de entrada, palavras, contadores, fotos, listas e interações. Palavras e fotos acompanham os eventos reais das animações; o contador ganha cliques de tom crescente e um acorde ao concluir. Chocolate, alerta e ranking respondem ao clique. Os sons são sintetizados localmente com Web Audio, sem downloads ou faixas de terceiros. Os motivos e volumes ficam em `src/components/SoundEffects.tsx`. A capa inicial fica silenciosa até uma interação.
 
-O botão de som controla tanto os efeitos quanto as músicas. Trocar de cena, reiniciar ou ocultar a aba interrompe o áudio correspondente. As cenas musicais não recebem efeitos por cima da faixa. Os efeitos não ficam repetindo durante a leitura.
+O botão de som controla tanto os efeitos quanto as músicas. Trocar de cena, reiniciar ou ocultar a aba interrompe o áudio correspondente. Nas cenas musicais, os efeitos ficam mais baixos para acompanhar a faixa. Há limite de vozes simultâneas e de frequência dos disparos; as animações decorativas contínuas não repetem sons. Os efeitos não ficam repetindo durante a leitura.
 
 As músicas usam o controller oficial do Spotify em segundo plano, sem players ou links visíveis e sem elementos focáveis. Se a integração falhar, desligar e religar o som tenta novamente; o retorno da conexão também dispara uma tentativa. Alguns navegadores, especialmente Safari, podem bloquear a reprodução pelo controller mesmo após a interação na página. A disponibilidade e a duração das faixas dependem do Spotify; no teste sem login, foram entregues prévias de aproximadamente 18–30 segundos. O story continua na tela quando a prévia acaba. Para reprodução independente desse serviço, configure arquivos locais autorizados em `audioSrc`.
 
