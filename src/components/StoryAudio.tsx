@@ -160,6 +160,8 @@ export function SpotifyPlayer({ track }: { track: Track }) {
         <span>♫ {track.artist}</span>
         {status === "playing" ? (
           <span className="playing-label">tocando agora</span>
+        ) : status === "failed" ? (
+          <span>toque no player abaixo</span>
         ) : (
           <button
             disabled={!audioState.enabled}
@@ -170,7 +172,11 @@ export function SpotifyPlayer({ track }: { track: Track }) {
           </button>
         )}
       </div>
-      <div ref={host} className="spotify-host" />
+      <div
+        ref={host}
+        className="spotify-host"
+        style={status === "failed" ? { display: "none" } : undefined}
+      />
       {status === "failed" && (
         <iframe
           title={`${track.title} no Spotify`}

@@ -5,3 +5,7 @@ test-results
 package-lock.json
 pnpm-lock.yaml
 next-env.d.ts
+
+.tools
+.downloads
+.sites-runtime
