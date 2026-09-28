@@ -12,4 +12,11 @@ export default defineConfig({
     viewport: { width: 390, height: 844 },
   },
   reporter: "list",
+  webServer: {
+    command: "pnpm dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI,
+    env: { NEXT_PUBLIC_BASE_PATH: "", NEXT_TELEMETRY_DISABLED: "1" },
+    timeout: 120000,
+  },
 });

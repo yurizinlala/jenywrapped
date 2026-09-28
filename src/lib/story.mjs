@@ -1,5 +1,3 @@
-export const phase = (auto, paused) =>
-  paused ? "paused" : auto ? "playing" : "waiting";
 export function nextPosition(index, beat, scenes) {
   const count = scenes[index].beats?.length ?? 1;
   if (beat < count - 1) return { index, beat: beat + 1 };

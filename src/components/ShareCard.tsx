@@ -36,16 +36,19 @@ async function exportCard() {
     ctx.font = `${weight} ${size}px "Space Grotesk Variable", Arial, sans-serif`;
     ctx.fillText(value, x, y);
   };
-  text("JENY", 70, 210, 170);
+  text(data.person.nickname.toUpperCase(), 70, 210, 170);
   text("WRAPPED", 70, 345, 145);
   text(String(data.year), 76, 418, 38);
   text("TOP PERSON", 76, 555, 28);
-  text(data.share.topPerson.toUpperCase(), 65, 735, 200);
+  text(data.person.nickname.toUpperCase(), 65, 735, 200);
   const rows = [
     ["TOP TRIP", data.share.topTrip],
     ["COR DO ANO", data.share.color],
     ["TRILHA DA VIAGEM", "Alinhamento Milenar — Jão"],
-    ["SECRET YURI TRACK", "this is what falling in love"],
+    [
+      `SECRET ${data.author.toUpperCase()} TRACK`,
+      "this is what falling in love",
+    ],
     ["", "feels like — JVKE"],
   ];
   let y = 850;
@@ -63,7 +66,7 @@ async function exportCard() {
   text(data.share.affection, 580, 1630, 86, "#dfff00");
   ctx.fillStyle = "#f7f4e9";
   ctx.fillRect(76, 1740, 928, 2);
-  text("YURI × JENY", 76, 1815, 35);
+  text(`${data.author} × ${data.person.nickname}`.toUpperCase(), 76, 1815, 35);
   text(String(data.year), 896, 1815, 30);
   const blob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
@@ -74,17 +77,11 @@ async function exportCard() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `jeny-wrapped-${data.year}.png`;
+  a.download = `${data.person.nickname.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-wrapped-${data.year}.png`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
-export function ShareCard({
-  onReplay,
-  onMusic,
-}: {
-  onReplay: () => void;
-  onMusic: () => void;
-}) {
+export function ShareCard({ onReplay }: { onReplay: () => void }) {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
   return (
@@ -92,7 +89,7 @@ export function ShareCard({
       <div className="share-card">
         <header>
           <span>
-            JENY
+            {data.person.nickname.toUpperCase()}
             <br />
             WRAPPED
           </span>
@@ -101,7 +98,7 @@ export function ShareCard({
         <Burst />
         <div className="share-person">
           <small>TOP PERSON</small>
-          <strong>{data.share.topPerson}</strong>
+          <strong>{data.person.nickname}</strong>
         </div>
         <div className="share-pair">
           <div>
@@ -120,7 +117,7 @@ export function ShareCard({
           </b>
         </div>
         <div className="share-song">
-          <small>SECRET YURI TRACK</small>
+          <small>SECRET {data.author.toUpperCase()} TRACK</small>
           <b>
             this is what falling in love feels like <span>— JVKE</span>
           </b>
@@ -136,13 +133,14 @@ export function ShareCard({
           </div>
         </div>
         <footer>
-          <span>YURI × JENY</span>
+          <span>
+            {data.author.toUpperCase()} × {data.person.nickname.toUpperCase()}
+          </span>
           <span>{data.year}</span>
         </footer>
       </div>
       <div className="share-actions">
         <button onClick={onReplay}>↺ rever</button>
-        <button onClick={onMusic}>♫ músicas</button>
         <button
           disabled={saving}
           onClick={async () => {

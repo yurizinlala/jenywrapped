@@ -20,4 +20,4 @@ export const motionPresets = {
     exit: { opacity: 0 },
   },
 };
-export const timing = { transition: 0.7, hold: 220, swipe: 45, maxDelta: 100 };
+export const timing = { transition: 0.7, hold: 220, swipe: 45 };

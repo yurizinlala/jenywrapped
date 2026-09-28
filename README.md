@@ -1,95 +1,90 @@
-# Jeny Wrapped 2026
+# Jeny Wrapped
 
-Uma retrospectiva pessoal em 24 stories, feita por Yuri para Jeny. Next.js 16, React, TypeScript, Motion e CSS/SVG originais. Sem backend, banco de dados, autenticação ou serviços de rastreamento.
+Retrospectiva pessoal em 24 stories, com Next.js, React, TypeScript, Motion e CSS/SVG. Sem backend, autenticação ou banco de dados.
 
 ## Rodar
 
-Use Node.js 20.9+ e pnpm 10+ (ou npm).
+Use Node.js 20.9+ e pnpm 11. O lockfile é `pnpm-lock.yaml`.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-No computador desta entrega, você também pode abrir `Iniciar Jeny Wrapped.cmd`, que usa o Node disponível no ambiente do Codex quando ele não está no PATH. Abra http://localhost:3000. Scripts equivalentes: `npm install` e `npm run dev`. O lockfile versionado é `pnpm-lock.yaml`; prefira pnpm para reproduzir as mesmas versões.
-
-```sh
-pnpm format
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm build
-```
-
-`pnpm build` gera um site estático em `out/`. Para visualizar essa saída, use `pnpm start` (ou `npm start`). O script usa um servidor estático incluído no projeto.
-
-## Personalização rápida para Yuri
-
-Edite **src/data/jeny.ts**:
-
-- `jenyWrapped.person` e `year`: nome, apelido e edição.
-- `scenes`: títulos, legendas, estatísticas, duração em milissegundos e `auto`.
-- `beats`: páginas dentro de uma história manual. Cada toque avança uma página; o progresso superior avança proporcionalmente.
-- `jenyWrapped.finalLetter`: cinco páginas da carta. Pode editar e adicionar páginas. Mantenha cada página com aproximadamente 45 palavras para caber em celulares pequenos.
-- `jenyWrapped.songs`: títulos, artistas, cores e IDs oficiais do Spotify.
-- `jenyWrapped.photos`: caminho e texto alternativo das fotos.
-- `jenyWrapped.share`: dados de destaque do card.
-
-O layout e a coreografia ficam em `src/components/Scenes.tsx`. Cores, espaços, variantes móveis e desenhos ficam em `src/styles/globals.css`. As transições compartilhadas ficam em `src/lib/motion.ts`.
-
-## Fotos
-
-Coloque fotos autorizadas e comprimidas em `public/memories/`. Sugestões:
-
-- `cinemark-01.webp`, `cinemark-02.webp`
-- `joao-pessoa-01.webp`, `joao-pessoa-02.webp`
-- `joao-pessoa-zoo.webp`, `joao-pessoa-lagoa.webp`
-- `jeny-01.webp`, `together-01.webp`
-
-Depois configure, por exemplo, `photos.trip.src: '/memories/joao-pessoa-01.webp'`. Caminhos vazios ou imagens que falharem usam uma composição geométrica original, sem ícone de imagem quebrada. Nenhuma foto pessoal foi inventada. Os rótulos de arquivo sugerido ficam apenas nos dados.
-
-## Músicas
-
-As cinco faixas já têm IDs oficiais do Spotify. Depois de começar a retrospectiva, cada cena musical carrega seu player e solicita reprodução automaticamente. Pausar, silenciar, trocar de cena ou ocultar a aba interrompe a reprodução. Alguns navegadores (principalmente Safari) e condições da conta Spotify exigem um toque no player; nesse caso há um botão de play visível. A duração disponível é determinada pelo Spotify.
-
-Você também pode configurar `audioSrc: '/audio/seu-arquivo-autorizado.mp3'` para uma gravação que tenha autorização para distribuir. Ela usa o mesmo controle de início, pausa e som. Nenhuma faixa comercial foi baixada ou incluída no repositório.
+Abra http://localhost:3000. No Windows, `Iniciar Jeny Wrapped.cmd` inicia o desenvolvimento após a instalação das dependências.
 
 ## Navegação
 
-- Botão na capa inicia a experiência.
-- Toque no terço esquerdo: voltar. Toque à direita: avançar.
-- Arraste horizontalmente para trocar de história.
-- Segure para pausar; solte para retomar.
-- Setas esquerda/direita e Espaço navegam quando o foco não está num controle.
-- Botão de pausa ou tecla P pausa explicitamente.
-- Player aberto e aba oculta pausam a contagem.
-- Anjos, Azul, Alinhamento, declaração e carta aguardam cada toque.
-- O botão de recomeçar volta à capa. O card final tem replay e download PNG 1080×1920, sem controles.
-- Preferências de movimento reduzido simplificam os efeitos sem retirar conteúdo.
+Cada story fica na tela por tempo indefinido. Não existe avanço automático, botão de pausa ou pausa ao segurar.
 
-Os números absurdos são piadas, não medições reais. Não há coleta de dados. O tempo total depende da leitura das cenas manuais, com cerca de dois minutos de cenas automáticas mais as páginas de leitura.
+- O botão da capa inicia a experiência.
+- Toque na esquerda para voltar; à direita para avançar.
+- Setas inferiores, swipe horizontal, setas do teclado e Espaço também navegam.
+- Cenas com várias páginas de texto avançam uma página por vez.
+- O cabeçalho mostra a marca, o contador, som e reinício. Não há título da cena nem catálogo de músicas.
+- O card final permite rever e baixar um PNG de 1080×1920.
+- A preferência de movimento reduzido simplifica os efeitos visuais.
 
-## Debug
+## Som
 
-Em desenvolvimento: http://localhost:3000/?debug=1. O painel permite saltar entre cenas, pausar e consultar estado/duração. Ele não existe no build de produção, mesmo com a query string.
+Stories sem música tocam um efeito curto ao entrar ou mudar de página. Os sons são sintetizados localmente com Web Audio, sem downloads ou faixas de terceiros. Os motivos e volumes ficam em `src/components/SoundEffects.tsx`. A capa inicial fica silenciosa até uma interação.
 
-## Verificação no navegador
+O botão de som controla tanto os efeitos quanto as músicas. Trocar de cena, reiniciar ou ocultar a aba interrompe o áudio correspondente. As cenas musicais não recebem efeitos por cima da faixa. Os efeitos não ficam repetindo durante a leitura.
 
-```sh
-pnpm exec playwright install chrome
-pnpm dev
-# Em outro terminal:
-pnpm exec playwright test
+As músicas usam o controller oficial do Spotify em segundo plano, sem players ou links visíveis e sem elementos focáveis. Se a integração falhar, desligar e religar o som tenta novamente; o retorno da conexão também dispara uma tentativa. Alguns navegadores, especialmente Safari, podem bloquear a reprodução pelo controller mesmo após a interação na página. A disponibilidade e a duração das faixas dependem do Spotify; no teste sem login, foram entregues prévias de aproximadamente 18–30 segundos. O story continua na tela quando a prévia acaba. Para reprodução independente desse serviço, configure arquivos locais autorizados em `audioSrc`.
+
+O site não implementa analytics próprio. A integração faz requisições ao Spotify, que possui suas próprias práticas de dados. Não é um produto oficial do Spotify.
+
+## Personalizar
+
+Edite `src/data/jeny.ts`:
+
+- `identity`: nome, apelido, tratamento carinhoso, autor e ano. A identidade visual, os metadados e os textos parametrizados usam essa configuração.
+- `scenes`: conteúdo, tema, transição e páginas (`beats`). Todas as cenas são manuais.
+- `jenyWrapped.finalLetter`: páginas da carta; prefira aproximadamente 45 palavras por página para celulares pequenos.
+- `jenyWrapped.photos`: caminhos e textos alternativos. Coloque as imagens em `public/memories/` e use `/memories/arquivo.webp`. Caminho vazio ou imagem indisponível mostra a composição geométrica.
+- `jenyWrapped.share`: viagem, cor e estatísticas do card.
+
+Para adicionar uma música, cadastre uma entrada em `jenyWrapped.songs`, com `id`, título, artista, cor e `spotifyTrackId`. Depois associe esse `id` ao campo `track` da cena desejada. A reprodução fica fora do layout, inclusive nas cenas que originalmente não eram musicais.
+
+```ts
+// Exemplo de associação, usando uma faixa já cadastrada:
+{ id: "cinema", track: "anjos", /* demais campos da cena */ }
 ```
 
-Os testes cobrem navegação, pausas, páginas manuais, modal, exportação e os seis tamanhos do briefing. Imagens de revisão ficam em `test-results/` (ignoradas pelo Git).
+Para áudio autorizado local, preencha `audioSrc: '/audio/arquivo.mp3'` na faixa e coloque o arquivo em `public/audio/`. Ele tem preferência sobre Spotify. Caminhos públicos de ícone, fotos e áudio recebem automaticamente o prefixo de publicação; não precisa adicioná-lo aos dados.
 
-## Deploy
+As novas associações são: página 2 → Just the Way You Are (Bruno Mars); página 5 → Jenifer (Gabriel Diniz); página 8 → Sinais de Fogo (Preta Gil); página 18 → Exagerado (Cazuza); página 23 → Alinhamento Milenar (Jão), tocada novamente desde o início. A numeração segue o contador JW, com a capa em 00. Todas as faixas, incluindo as anteriores, ficam sem controles Spotify visíveis.
 
-O projeto é exportado estaticamente, sem segredos ou variáveis de ambiente obrigatórias. Na Vercel, importe a pasta como projeto Next.js e execute `pnpm build`. Em um host estático, publique somente a pasta `out/` gerada. O projeto também está configurado para publicação privada no Sites, com saída estática em `out/`.
+Textos livres podem conter referências narrativas específicas; revise-os ao adaptar a retrospectiva para outra pessoa. Os títulos de faixas e estatísticas editoriais continuam editáveis.
+
+## Verificar
+
+```sh
+pnpm format:check
+pnpm lint
+pnpm test
+pnpm exec playwright install chrome
+pnpm test:e2e
+pnpm build
+pnpm typecheck
+pnpm test:production
+```
+
+Playwright inicia o servidor de desenvolvimento automaticamente e cobre navegação manual, páginas internas, seis tamanhos de tela, download PNG, efeitos sonoros, mute, visibilidade e recuperação de falhas do Spotify. A integração nos testes específicos de áudio é simulada; não valida a reprodução de faixas em todas as contas Spotify.
+
+O teste de produção inicia e encerra seu próprio servidor na porta 3001, lê o prefixo do build e verifica também o ícone. As imagens ficam em `test-results/`. A formatação aceita as quebras de linha do checkout; `.gitattributes` padroniza arquivos de texto futuros.
+
+Debug local: http://localhost:3000/?debug=1 permite saltar entre cenas. Não é incluído na versão de produção.
+
+## Publicar
+
+`pnpm build` exporta o site em `out/`. `pnpm start` serve um build local na porta 3000.
+
+No GitHub Actions, o prefixo padrão é `/jenywrapped`. Para outro endereço, configure `NEXT_PUBLIC_BASE_PATH` no build. Para testar localmente uma exportação com prefixo, use o mesmo valor em `BASE_PATH` ao executar `pnpm start`; o teste de produção faz isso automaticamente.
+
+O workflow valida pull requests e só publica pushes em `main` ou execuções manuais, após formatação, lint, testes unitários, testes de navegador, build e smoke de produção passarem. Nenhuma publicação é feita apenas por editar arquivos localmente.
 
 ## Arquitetura
 
-`StoryEngine` mantém índice, página, entrada e razões independentes de pausa. Um único `requestAnimationFrame` conta tempo ativo; voltar, avançar ou reiniciar zera esse tempo. A visibilidade do documento e o modal interrompem o mesmo relógio. O progresso é atualizado diretamente no elemento, sem renderizar toda a árvore a cada frame. Apenas a cena atual e a transição de saída permanecem montadas. Tudo componentizado para facilitar modulação.
-
-Os gráficos e capas são autorais. Fontes locais via pacote `@fontsource-variable/space-grotesk`, sem requisição ao Google Fonts. O único serviço externo é o Spotify, carregado nas cenas musicais após iniciar a retrospectiva. Não é um produto oficial do Spotify.
+`StoryEngine` mantém índice, página interna e visibilidade, sem relógio de avanço. `Scenes` compõe as páginas. `StoryAudio` controla as fontes musicais e sua recuperação; `SoundEffects` sintetiza os efeitos. `Primitives` concentra os elementos visuais, `ShareCard` exporta o PNG e `publicAsset` resolve caminhos no host estático. As fontes são locais via pacote `@fontsource-variable/space-grotesk`.

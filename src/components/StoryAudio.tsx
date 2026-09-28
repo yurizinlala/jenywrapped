@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { publicAsset } from "@/lib/assets.mjs";
 import type { Track } from "@/data/jeny";
 
 type AudioState = {
@@ -7,6 +8,7 @@ type AudioState = {
   enabled: boolean;
   paused: boolean;
   activeTrack?: string;
+  activeScene?: string;
 };
 export const StoryAudioContext = createContext<AudioState>({
   started: false,
@@ -45,9 +47,17 @@ function loadSpotify() {
   if (apiPromise) return apiPromise;
   apiPromise = new Promise<SpotifyAPI>((resolve, reject) => {
     const script = document.createElement("script");
-    const timeout = window.setTimeout(() => {
-      reject(new Error("Spotify indisponível"));
-    }, 12000);
+    const fail = (message: string) => {
+      clearTimeout(timeout);
+      script.remove();
+      window.onSpotifyIframeApiReady = undefined;
+      apiPromise = null;
+      reject(new Error(message));
+    };
+    const timeout = window.setTimeout(
+      () => fail("Spotify indisponível"),
+      12000,
+    );
     window.onSpotifyIframeApiReady = (api) => {
       clearTimeout(timeout);
       resolve(api);
@@ -55,15 +65,16 @@ function loadSpotify() {
     script.src = "https://open.spotify.com/embed/iframe-api/v1";
     script.async = true;
     script.onerror = () => {
-      clearTimeout(timeout);
-      reject(new Error("Sem conexão com Spotify"));
+      fail("Sem conexão com Spotify");
     };
     document.body.appendChild(script);
   });
   return apiPromise;
 }
-export function SpotifyPlayer({ track }: { track: Track }) {
+type PlayerProps = { track: Track; sceneId: string };
+export function SpotifyPlayer({ track, sceneId }: PlayerProps) {
   const audioState = useContext(StoryAudioContext);
+  const [attempt, setAttempt] = useState(0);
   const currentState = useRef(audioState);
   const host = useRef<HTMLDivElement>(null);
   const controller = useRef<Controller | null>(null);
@@ -75,17 +86,27 @@ export function SpotifyPlayer({ track }: { track: Track }) {
     const c = controller.current;
     if (!c) return;
     if (
+      !audioState.started ||
       !audioState.enabled ||
       audioState.paused ||
-      audioState.activeTrack !== track.id
+      audioState.activeTrack !== track.id ||
+      audioState.activeScene !== sceneId
     )
       c.pause();
     else c.resume();
-  }, [audioState, track.id]);
+  }, [audioState, track.id, sceneId]);
   useEffect(() => {
     if (!audioState.started || !host.current) return;
     let disposed = false;
     let own: Controller | null = null;
+    const timeout = window.setTimeout(() => {
+      disposed = true;
+      clearTimeout(timeout);
+      own?.destroy();
+      controller.current = null;
+      target.replaceChildren();
+      setStatus("failed");
+    }, 15000);
     const target = host.current;
     const element = document.createElement("div");
     target.appendChild(element);
@@ -106,14 +127,23 @@ export function SpotifyPlayer({ track }: { track: Track }) {
             }
             own = c;
             controller.current = c;
+            const iframe = target.querySelector("iframe");
+            if (iframe) {
+              iframe.tabIndex = -1;
+              iframe.loading = "eager";
+              iframe.setAttribute("aria-hidden", "true");
+            }
             c.addListener("ready", () => {
               if (disposed) return;
+              clearTimeout(timeout);
               setStatus("ready");
               const state = currentState.current;
               if (
+                state.started &&
                 state.enabled &&
                 !state.paused &&
-                state.activeTrack === track.id
+                state.activeTrack === track.id &&
+                state.activeScene === sceneId
               )
                 c.play();
             });
@@ -122,9 +152,11 @@ export function SpotifyPlayer({ track }: { track: Track }) {
               const state = currentState.current;
               if (
                 !event.data.isPaused &&
-                (!state.enabled ||
+                (!state.started ||
+                  !state.enabled ||
                   state.paused ||
-                  state.activeTrack !== track.id)
+                  state.activeTrack !== track.id ||
+                  state.activeScene !== sceneId)
               ) {
                 c.pause();
                 return;
@@ -141,63 +173,51 @@ export function SpotifyPlayer({ track }: { track: Track }) {
         );
       })
       .catch(() => {
-        if (!disposed) setStatus("failed");
+        clearTimeout(timeout);
+        if (!disposed) {
+          disposed = true;
+          own?.destroy();
+          controller.current = null;
+          target.replaceChildren();
+          setStatus("failed");
+        }
       });
     return () => {
+      clearTimeout(timeout);
       disposed = true;
       own?.destroy();
       controller.current = null;
       target.replaceChildren();
     };
-  }, [track.id, track.spotifyTrackId, audioState.started]);
+  }, [track.id, track.spotifyTrackId, audioState.started, sceneId, attempt]);
+  useEffect(() => {
+    const retry = () => {
+      if (status === "failed") {
+        setStatus("loading");
+        setAttempt((n) => n + 1);
+      }
+    };
+    window.addEventListener("online", retry);
+    window.addEventListener("jeny:retry-audio", retry);
+    return () => {
+      window.removeEventListener("online", retry);
+      window.removeEventListener("jeny:retry-audio", retry);
+    };
+  }, [status]);
   return (
     <div
       className="story-track"
+      hidden
+      aria-hidden="true"
       data-audio-status={status}
-      aria-label={`${track.title}, ${track.artist}`}
+      data-track={track.id}
     >
-      <div className="track-heading">
-        <span>♫ {track.artist}</span>
-        {status === "playing" ? (
-          <span className="playing-label">tocando agora</span>
-        ) : status === "failed" ? (
-          <span>toque no player abaixo</span>
-        ) : (
-          <button
-            disabled={!audioState.enabled}
-            onClick={() => controller.current?.play()}
-            aria-label={`Tocar ${track.title}`}
-          >
-            {status === "loading" ? "conectando…" : "▶ tocar música"}
-          </button>
-        )}
-      </div>
-      <div
-        ref={host}
-        className="spotify-host"
-        style={status === "failed" ? { display: "none" } : undefined}
-      />
-      {status === "failed" && (
-        <iframe
-          title={`${track.title} no Spotify`}
-          src={`https://open.spotify.com/embed/track/${track.spotifyTrackId}`}
-          width="100%"
-          height="80"
-          allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-        />
-      )}
-      <a
-        className="track-external"
-        href={`https://open.spotify.com/track/${track.spotifyTrackId}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {track.title} ↗
-      </a>
+      <div ref={host} />
     </div>
   );
 }
-function LocalPlayer({ track }: { track: Track }) {
+
+function LocalPlayer({ track, sceneId }: PlayerProps) {
   const state = useContext(StoryAudioContext);
   const audio = useRef<HTMLAudioElement>(null);
   const [blocked, setBlocked] = useState(false);
@@ -208,23 +228,41 @@ function LocalPlayer({ track }: { track: Track }) {
       !state.started ||
       !state.enabled ||
       state.paused ||
-      state.activeTrack !== track.id
+      state.activeTrack !== track.id ||
+      state.activeScene !== sceneId
     ) {
       el.pause();
       return;
     }
     el.play().catch(() => setBlocked(true));
     return () => el.pause();
-  }, [state, track.id]);
+  }, [state, track.id, sceneId]);
   return (
-    <div className="story-track">
-      <span className="track-heading">
-        {track.title} · {track.artist}
-      </span>
+    <div
+      className="story-track"
+      hidden
+      aria-hidden="true"
+      data-track={track.id}
+    >
       <audio
         ref={audio}
-        src={track.audioSrc}
-        controls
+        src={publicAsset(track.audioSrc ?? "")}
+        muted={
+          !state.enabled ||
+          state.paused ||
+          !state.started ||
+          state.activeScene !== sceneId
+        }
+        onPlay={(e) => {
+          if (
+            !state.enabled ||
+            state.paused ||
+            !state.started ||
+            state.activeScene !== sceneId
+          )
+            e.currentTarget.pause();
+        }}
+        tabIndex={-1}
         preload="none"
         onPlaying={() => setBlocked(false)}
       />
@@ -232,10 +270,10 @@ function LocalPlayer({ track }: { track: Track }) {
     </div>
   );
 }
-export function StoryTrack({ track }: { track: Track }) {
+export function StoryTrack({ track, sceneId }: PlayerProps) {
   return track.audioSrc ? (
-    <LocalPlayer track={track} />
+    <LocalPlayer track={track} sceneId={sceneId} />
   ) : (
-    <SpotifyPlayer track={track} />
+    <SpotifyPlayer track={track} sceneId={sceneId} />
   );
 }

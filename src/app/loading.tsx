@@ -1,13 +1,19 @@
+import { jenyWrapped } from "@/data/jeny";
 export default function Loading() {
   return (
     <div className="preloader">
-      <span>YURI × JENY</span>
+      <span>
+        {jenyWrapped.author.toUpperCase()} ×{" "}
+        {jenyWrapped.person.nickname.toUpperCase()}
+      </span>
       <strong>
         carregando
         <br />
         memórias<span className="loading-dot">...</span>
       </strong>
-      <small>JENY WRAPPED / 2026</small>
+      <small>
+        {jenyWrapped.person.nickname.toUpperCase()} WRAPPED / {jenyWrapped.year}
+      </small>
     </div>
   );
 }

@@ -11,41 +11,38 @@ import {
   BeatText,
   SoundRings,
 } from "./Primitives";
-import { StoryTrack } from "./StoryAudio";
 import { ShareCard } from "./ShareCard";
 export function SceneContent({
   scene,
   beat,
   onStart,
-  onMusic,
   onReplay,
 }: {
   scene: Scene;
   beat: number;
   onStart: () => void;
-  onMusic: (id: string) => void;
   onReplay: () => void;
 }) {
   const [egg, setEgg] = useState(0);
-  const track = jenyWrapped.songs.find((t) => t.id === scene.track);
   const common = (
     <>
       <div className="scene-kicker">{scene.kicker}</div>
       <KineticText text={scene.title} />
     </>
   );
-  const trackCard = track && <StoryTrack track={track} />;
   switch (scene.id) {
     case "cover":
       return (
         <div className="cover-composition">
-          <h1 className="sr-only">Jeny Wrapped {jenyWrapped.year}</h1>
+          <h1 className="sr-only">
+            {jenyWrapped.person.nickname} Wrapped {jenyWrapped.year}
+          </h1>
           <div className="cover-label">
             <span>ESPECIALMENTE FEITO PRA</span>
             <span>VOCÊ. SIM, VOCÊ.</span>
           </div>
           <div className="cover-word">
-            <span>JENY</span>
+            <span>{jenyWrapped.person.nickname.toUpperCase()}</span>
             <Burst className="cover-burst" />
           </div>
           <div className="wrapped-word">
@@ -53,7 +50,7 @@ export function SceneContent({
             <span className="edition">
               EDIÇÃO
               <br />
-              2026
+              {jenyWrapped.year}
             </span>
           </div>
           <div className="cover-art" aria-hidden="true">
@@ -65,9 +62,9 @@ export function SceneContent({
             </div>
             <Burst className="cover-star" />
             <span className="cover-year">
-              20
+              {String(jenyWrapped.year).slice(0, 2)}
               <br />
-              26
+              {String(jenyWrapped.year).slice(2)}
             </span>
             <div className="cover-capsule" />
           </div>
@@ -77,7 +74,9 @@ export function SceneContent({
               <span>começar retrospectiva</span>
               <span aria-hidden="true">↗</span>
             </button>
-            <small>FEITO POR YURI · ZERO IMPARCIALIDADE</small>
+            <small>
+              FEITO POR {jenyWrapped.author.toUpperCase()} · ZERO IMPARCIALIDADE
+            </small>
           </div>
         </div>
       );
@@ -271,7 +270,6 @@ export function SceneContent({
           <span className="scene-kicker">ANTES MESMO DE VIRAR NÓS</span>
           <KineticText text={scene.title} />
           <BeatText text={scene.beats?.[beat] ?? ""} />
-          {trackCard}
         </div>
       );
     case "secret":
@@ -288,7 +286,6 @@ export function SceneContent({
             <KineticText text={scene.title} />
           </div>
           <BeatText text={scene.note ?? ""} />
-          {trackCard}
         </div>
       );
     case "azul":
@@ -308,7 +305,6 @@ export function SceneContent({
           <span className="scene-kicker">COR DO ANO / COR FAVORITA DELA</span>
           <KineticText text={scene.title} />
           <BeatText text={scene.beats?.[beat] ?? ""} />
-          {trackCard}
         </div>
       );
     case "trip":
@@ -377,7 +373,6 @@ export function SceneContent({
           <span className="scene-kicker">{scene.note} · HORA CERTA.</span>
           <KineticText text={scene.title} />
           <BeatText text={scene.beats?.[beat] ?? ""} />
-          {trackCard}
         </div>
       );
     case "candy":
@@ -401,7 +396,6 @@ export function SceneContent({
           </motion.button>
           <small>{scene.note}</small>
           <KineticText text={scene.title} />
-          {trackCard}
         </div>
       );
     case "top":
@@ -459,9 +453,9 @@ export function SceneContent({
             {scene.beats?.[beat]}
           </motion.h1>
           <motion.div layoutId="sign-off" className="quiet-footer">
-            <span>Y</span>
+            <span>{jenyWrapped.author.charAt(0)}</span>
             <i />
-            <span>J</span>
+            <span>{jenyWrapped.person.nickname.charAt(0)}</span>
           </motion.div>
         </div>
       );
@@ -482,7 +476,7 @@ export function SceneContent({
             <span>
               com carinho,
               <br />
-              <strong>Yuri.</strong>
+              <strong>{jenyWrapped.author}.</strong>
             </span>
             <span>
               {String(beat + 1).padStart(2, "0")} / {scene.beats?.length}
@@ -491,7 +485,7 @@ export function SceneContent({
         </div>
       );
     case "share":
-      return <ShareCard onReplay={onReplay} onMusic={() => onMusic("anjos")} />;
+      return <ShareCard onReplay={onReplay} />;
     default:
       return <div className="scene-content">{common}</div>;
   }

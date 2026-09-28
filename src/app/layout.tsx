@@ -1,10 +1,12 @@
+import { jenyWrapped } from "@/data/jeny";
+import { publicAsset } from "@/lib/assets.mjs";
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/space-grotesk";
 import "@/styles/globals.css";
 export const metadata: Metadata = {
-  title: "Jeny Wrapped 2026",
-  description: "uma retrospectiva completamente imparcial",
-  icons: { icon: "/icon.svg" },
+  title: `${jenyWrapped.person.nickname} Wrapped ${jenyWrapped.year}`,
+  description: jenyWrapped.intro,
+  icons: { icon: publicAsset("/icon.svg") },
 };
 export const viewport: Viewport = {
   width: "device-width",

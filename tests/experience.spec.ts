@@ -39,10 +39,11 @@ async function jump(page: import("@playwright/test").Page, index: number) {
   );
   await page.waitForTimeout(850);
 }
-test("story navigation, hold, autoplay, manual beats, modal, replay, PNG", async ({
+test("manual navigation, no hold-to-pause, simplified controls, replay, PNG", async ({
   page,
 }) => {
   const errors: string[] = [];
+  await page.route("https://open.spotify.com/**", (route) => route.abort());
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?debug=1");
   await page.getByRole("button", { name: "começar retrospectiva" }).click();
@@ -71,7 +72,7 @@ test("story navigation, hold, autoplay, manual beats, modal, replay, PNG", async
   await page.mouse.down();
   await expect(page.locator(".story-stage")).toHaveAttribute(
     "data-status",
-    "paused",
+    "waiting",
   );
   await page.waitForTimeout(700);
   await page.mouse.up();
@@ -80,6 +81,12 @@ test("story navigation, hold, autoplay, manual beats, modal, replay, PNG", async
     "effect",
   );
   await jump(page, 8);
+  await page.waitForTimeout(6000);
+  await expect(page.locator(".story-stage")).toHaveAttribute(
+    "data-scene",
+    "pan",
+  );
+  await page.getByLabel("Próxima história", { exact: true }).click();
   await expect(page.locator(".story-stage")).toHaveAttribute(
     "data-scene",
     "music",
@@ -95,14 +102,14 @@ test("story navigation, hold, autoplay, manual beats, modal, replay, PNG", async
   await expect(page.locator(".song-beat")).toHaveText(
     "essa lembrava você antes.",
   );
-  await page.getByLabel("Abrir músicas", { exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await expect(page.locator(".story-stage")).toHaveAttribute(
-    "data-status",
-    "paused",
+  await expect(page.locator(".toolbar-actions button")).toHaveCount(2);
+  await expect(page.locator(".chapter-name")).toHaveCount(0);
+  await expect(page.getByLabel("Abrir músicas", { exact: true })).toHaveCount(
+    0,
   );
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByLabel("Pausar retrospectiva", { exact: true }),
+  ).toHaveCount(0);
   await jump(page, 23);
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "salvar card" }).click();

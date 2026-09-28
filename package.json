@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:production": "node scripts/verify-production.mjs"
   },
   "dependencies": {
     "@fontsource-variable/space-grotesk": "^5.2.0",

@@ -1,8 +1,17 @@
 "use client";
 import { animate, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import Image from "next/image";
-import { jenyWrapped, type Track } from "@/data/jeny";
+import { publicAsset } from "@/lib/assets.mjs";
+import { StoryAudioContext } from "./StoryAudio";
+import { jenyWrapped } from "@/data/jeny";
 
 export function Burst({
   className = "",
@@ -107,7 +116,7 @@ export function PhotoFrame({ id }: { id: string }) {
       <div className="photo-art">
         {photo.src && !failed ? (
           <Image
-            src={photo.src}
+            src={publicAsset(photo.src)}
             alt={photo.alt}
             fill
             sizes="(max-width: 600px) 70vw, 310px"
@@ -117,7 +126,9 @@ export function PhotoFrame({ id }: { id: string }) {
           <>
             <ShapeField kind="arches" />
             <span className="photo-monogram" aria-hidden="true">
-              Y<span>×</span>J
+              {jenyWrapped.author.charAt(0)}
+              <span>×</span>
+              {jenyWrapped.person.nickname.charAt(0)}
             </span>
             <span className="photo-caption">{photo.label}</span>
           </>
@@ -130,46 +141,6 @@ export function PhotoFrame({ id }: { id: string }) {
     </figure>
   );
 }
-export function TrackCard({
-  track,
-  onOpen,
-}: {
-  track: Track;
-  onOpen: (id: string) => void;
-}) {
-  return (
-    <button
-      className="track-card"
-      onClick={() => onOpen(track.id)}
-      aria-label={`Ouvir ${track.title}, ${track.artist}`}
-    >
-      <span
-        className="track-art"
-        style={{ "--track": track.color } as CSSProperties}
-      >
-        <span className="record" />
-      </span>
-      <span className="track-info">
-        <strong>{track.title}</strong>
-        <small>{track.artist}</small>
-      </span>
-      <span className="track-play" aria-hidden="true">
-        ↗
-      </span>
-    </button>
-  );
-}
-export function Equalizer() {
-  return (
-    <span className="equalizer" aria-hidden="true">
-      <i />
-      <i />
-      <i />
-      <i />
-    </span>
-  );
-}
-
 export function Counter({
   value,
   suffix = "",
@@ -179,6 +150,9 @@ export function Counter({
 }) {
   const element = useRef<HTMLSpanElement>(null);
   const reduced = useReducedMotion();
+  const { paused } = useContext(StoryAudioContext);
+  const pausedRef = useRef(paused);
+  const controls = useRef<ReturnType<typeof animate> | null>(null);
   useEffect(() => {
     if (reduced) {
       if (element.current) element.current.textContent = String(value);
@@ -188,12 +162,22 @@ export function Counter({
       duration: 1.8,
       ease: [0.12, 0.7, 0.22, 1],
       onUpdate: (latest) => {
-        if (element.current)
+        if (element.current && !pausedRef.current)
           element.current.textContent = String(Math.round(latest));
       },
     });
-    return () => animation.stop();
+    controls.current = animation;
+    if (pausedRef.current) animation.pause();
+    return () => {
+      animation.stop();
+      controls.current = null;
+    };
   }, [value, reduced]);
+  useLayoutEffect(() => {
+    pausedRef.current = paused;
+    if (paused) controls.current?.pause();
+    else controls.current?.play();
+  }, [paused, value, reduced]);
   return (
     <h1 aria-label={`${value}${suffix}`}>
       <span aria-hidden="true">

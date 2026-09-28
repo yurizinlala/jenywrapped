@@ -2,6 +2,7 @@ import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 const root = path.resolve("out");
+const basePath = (process.env.BASE_PATH ?? "").replace(/\/$/, "");
 const types = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript",
@@ -12,12 +13,26 @@ const types = {
   ".woff2": "font/woff2",
   ".ico": "image/x-icon",
   ".json": "application/json",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".m4a": "audio/mp4",
 };
 http
   .createServer(async (req, res) => {
     try {
       const url = new URL(req.url, "http://localhost");
-      let relative = decodeURIComponent(url.pathname).replace(/^\/+/, "");
+      const pathname = decodeURIComponent(url.pathname);
+      if (
+        basePath &&
+        pathname !== basePath &&
+        !pathname.startsWith(basePath + "/")
+      ) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      let relative = pathname.slice(basePath.length).replace(/^\/+/, "");
       if (!relative) relative = "index.html";
       let target = path.resolve(root, relative);
       if (!target.startsWith(root + path.sep)) {

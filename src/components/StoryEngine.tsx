@@ -3,28 +3,35 @@ import {
   useCallback,
   useEffect,
   useReducer,
+  useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEvent,
 } from "react";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useReducedMotion,
-} from "motion/react";
-import { scenes } from "@/data/jeny";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { jenyWrapped, scenes } from "@/data/jeny";
 import { motionPresets, timing } from "@/lib/motion";
-import { nextPosition, previousPosition, phase } from "@/lib/story.mjs";
+import { nextPosition, previousPosition } from "@/lib/story.mjs";
 import { SceneContent } from "./Scenes";
-import { MusicDialog } from "./MusicDialog";
-import { StoryAudioContext } from "./StoryAudio";
-import { Equalizer } from "./Primitives";
+import { StoryAudioContext, StoryTrack } from "./StoryAudio";
+import { SceneSoundEffect, unlockSoundEffects } from "./SoundEffects";
+const motionQuery = "(prefers-reduced-motion: reduce)";
+function subscribeMotionPreference(onChange: () => void) {
+  const query = window.matchMedia(motionQuery);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+const readMotionPreference = () => window.matchMedia(motionQuery).matches;
+const serverMotionPreference = () => false;
 type Position = { index: number; beat: number; entering: boolean };
 type Action =
-  { type: "next" | "previous" | "entered" } | { type: "jump"; index: number };
+  | { type: "next" | "previous" }
+  | { type: "entered"; index: number }
+  | { type: "jump"; index: number };
 function reducer(s: Position, a: Action): Position {
-  if (a.type === "entered") return { ...s, entering: false };
+  if (a.type === "entered")
+    return a.index === s.index ? { ...s, entering: false } : s;
   if (a.type === "jump")
     return {
       index: Math.max(0, Math.min(scenes.length - 1, a.index)),
@@ -41,36 +48,48 @@ export function StoryEngine() {
   const [position, dispatch] = useReducer(reducer, {
     index: 0,
     beat: 0,
-    entering: true,
+    entering: false,
   });
   const [started, setStarted] = useState(false);
   const [sound, setSound] = useState(true);
-  const [paused, setPaused] = useState(false);
-  const [holding, setHolding] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [music, setMusic] = useState<string | null>(null);
   const [debug, setDebug] = useState(false);
-  const elapsed = useRef(0);
-  const progress = useRef<HTMLSpanElement>(null);
   const down = useRef<{ x: number; y: number; time: number } | null>(null);
-  const reduced = useReducedMotion();
+  const reduced = useSyncExternalStore(
+    subscribeMotionPreference,
+    readMotionPreference,
+    serverMotionPreference,
+  );
   const scene = scenes[position.index];
-  const isPaused = paused || holding || hidden || music !== null;
-  const status = position.entering ? "entering" : phase(scene.auto, isPaused);
+  const track = jenyWrapped.songs.find((t) => t.id === scene.track);
+  const audioState = useMemo(
+    () => ({
+      started,
+      enabled: sound,
+      paused: hidden,
+      activeTrack: scene.track,
+      activeScene: scene.id,
+    }),
+    [started, sound, hidden, scene.track, scene.id],
+  );
+  const isPaused = hidden;
+  const status = position.entering
+    ? "entering"
+    : isPaused
+      ? "paused"
+      : "waiting";
   const next = useCallback(() => {
     setStarted(true);
-    elapsed.current = 0;
+    unlockSoundEffects();
     dispatch({ type: "next" });
   }, []);
   const previous = useCallback(() => {
-    elapsed.current = 0;
+    unlockSoundEffects();
     dispatch({ type: "previous" });
   }, []);
   const jump = useCallback((index: number) => {
-    if (index > 0) setStarted(true);
-    elapsed.current = 0;
-    setPaused(false);
-    setHolding(false);
+    setStarted(index > 0);
+    unlockSoundEffects();
     dispatch({ type: "jump", index });
   }, []);
   useEffect(() => {
@@ -89,9 +108,8 @@ export function StoryEngine() {
   useEffect(() => {
     const keys = (e: KeyboardEvent) => {
       if (
-        music ||
-        (e.target instanceof HTMLElement &&
-          e.target.closest("button,a,input,select,textarea,dialog"))
+        e.target instanceof HTMLElement &&
+        e.target.closest("button,a,input,select,textarea,dialog")
       )
         return;
       if (e.key === "ArrowRight" || e.code === "Space") {
@@ -102,49 +120,22 @@ export function StoryEngine() {
         e.preventDefault();
         previous();
       }
-      if (e.key.toLowerCase() === "p") {
-        e.preventDefault();
-        setPaused((p) => !p);
-      }
     };
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
-  }, [music, next, previous]);
-  useEffect(() => {
-    if (!scene.auto) {
-      if (progress.current)
-        progress.current.style.transform = `scaleX(${(position.beat + 1) / (scene.beats?.length ?? 1)})`;
-      return;
-    }
-    if (status !== "playing") return;
-    let frame = 0,
-      last = performance.now();
-    const tick = (now: number) => {
-      elapsed.current += Math.min(now - last, timing.maxDelta);
-      last = now;
-      if (progress.current)
-        progress.current.style.transform = `scaleX(${Math.min(1, elapsed.current / scene.duration)})`;
-      if (elapsed.current >= scene.duration) {
-        next();
-        return;
-      }
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [scene, position.beat, status, next]);
+  }, [next, previous]);
   const pointerDown = (e: PointerEvent<HTMLElement>) => {
     if (
       e.button !== 0 ||
-      (e.target as HTMLElement).closest("button,a,dialog,select")
+      (e.target as HTMLElement).closest(
+        "button,a,dialog,select,input,audio,iframe",
+      )
     )
       return;
     down.current = { x: e.clientX, y: e.clientY, time: performance.now() };
-    setHolding(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const pointerUp = (e: PointerEvent<HTMLElement>) => {
-    setHolding(false);
     if (!down.current) return;
     const start = down.current;
     down.current = null;
@@ -168,19 +159,17 @@ export function StoryEngine() {
   };
   return (
     <MotionConfig reducedMotion="user">
-      <StoryAudioContext.Provider
-        value={{
-          started,
-          enabled: sound,
-          paused: isPaused,
-          activeTrack: scene.track,
-        }}
-      >
+      <StoryAudioContext.Provider value={audioState}>
+        <SceneSoundEffect scene={scene} beat={position.beat} />
+        {track && (
+          <StoryTrack key={scene.id} track={track} sceneId={scene.id} />
+        )}
         <main className={`experience theme-${scene.theme}`}>
           <div className="desktop-frame" aria-hidden="true">
             <div className="desktop-brand">
-              YURI
-              <br />× JENY<span>2026</span>
+              {jenyWrapped.author.toUpperCase()}
+              <br />× {jenyWrapped.person.nickname.toUpperCase()}
+              <span>{jenyWrapped.year}</span>
             </div>
             <div className="desktop-type">
               UMA
@@ -205,18 +194,16 @@ export function StoryEngine() {
           </div>
           <section
             className={`story-stage ${isPaused ? "is-paused" : ""}`}
-            aria-label="Jeny Wrapped, retrospectiva interativa"
+            aria-label={`${jenyWrapped.person.nickname} Wrapped, retrospectiva interativa`}
             data-scene={scene.id}
             data-status={status}
             onPointerDown={pointerDown}
             onPointerUp={pointerUp}
             onPointerCancel={() => {
               down.current = null;
-              setHolding(false);
             }}
             onLostPointerCapture={() => {
               down.current = null;
-              setHolding(false);
             }}
           >
             <header className="story-header">
@@ -230,9 +217,8 @@ export function StoryEngine() {
                     className={`progress-segment ${i < position.index ? "complete" : ""}`}
                   >
                     <span
-                      ref={i === position.index ? progress : undefined}
                       style={{
-                        transform: `scaleX(${i < position.index ? 1 : 0})`,
+                        transform: `scaleX(${i < position.index ? 1 : i === position.index ? (position.beat + 1) / (scene.beats?.length ?? 1) : 0})`,
                       }}
                     />
                   </span>
@@ -240,36 +226,22 @@ export function StoryEngine() {
               </div>
               <div className="story-toolbar">
                 <span className="mini-brand">
-                  J<span>✳</span>W{" "}
+                  {jenyWrapped.person.nickname.charAt(0)}
+                  <span>✳</span>W{" "}
                   <i>/ {String(position.index).padStart(2, "0")}</i>
                 </span>
-                <span className="chapter-name">{scene.chapter}</span>
                 <div className="toolbar-actions">
                   <button
                     aria-label={sound ? "Desativar som" : "Ativar som"}
                     aria-pressed={sound}
-                    onClick={() => setSound((v) => !v)}
+                    onClick={() => {
+                      unlockSoundEffects();
+                      setSound((v) => !v);
+                      if (!sound)
+                        window.dispatchEvent(new Event("jeny:retry-audio"));
+                    }}
                   >
                     {sound ? "♫" : "♩"}
-                  </button>
-                  {position.index > 0 && (
-                    <button
-                      onClick={() => setPaused((v) => !v)}
-                      aria-label={
-                        paused
-                          ? "Retomar retrospectiva"
-                          : "Pausar retrospectiva"
-                      }
-                      aria-pressed={paused}
-                    >
-                      {paused ? "▶" : "Ⅱ"}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setMusic(scene.track ?? "anjos")}
-                    aria-label="Abrir músicas"
-                  >
-                    <Equalizer />
                   </button>
                   <button
                     onClick={() => jump(0)}
@@ -281,7 +253,7 @@ export function StoryEngine() {
               </div>
             </header>
             <div className="scene-viewport">
-              <AnimatePresence mode="sync">
+              <AnimatePresence mode="sync" initial={false}>
                 <motion.article
                   key={scene.id}
                   className={`scene theme-${scene.theme} scene-${scene.id}`}
@@ -290,7 +262,9 @@ export function StoryEngine() {
                     duration: reduced ? 0.15 : timing.transition,
                     ease: [0.22, 1, 0.36, 1],
                   }}
-                  onAnimationComplete={() => dispatch({ type: "entered" })}
+                  onAnimationComplete={() =>
+                    dispatch({ type: "entered", index: position.index })
+                  }
                   aria-label={scene.chapter}
                 >
                   <SceneContent
@@ -298,7 +272,6 @@ export function StoryEngine() {
                     scene={scene}
                     beat={position.beat}
                     onStart={() => jump(1)}
-                    onMusic={setMusic}
                     onReplay={() => jump(0)}
                   />
                 </motion.article>
@@ -310,11 +283,9 @@ export function StoryEngine() {
                   ←
                 </button>
                 <span>
-                  {isPaused
-                    ? "pausado · no seu tempo"
-                    : scene.auto
-                      ? "segure para pausar"
-                      : `${position.beat + 1} / ${scene.beats?.length ?? 1} · toque para continuar`}
+                  {scene.beats
+                    ? `${position.beat + 1} / ${scene.beats.length} · toque para continuar`
+                    : "toque para continuar"}
                 </span>
                 <button onClick={next} aria-label="Próxima história">
                   →
@@ -327,7 +298,7 @@ export function StoryEngine() {
           </section>
           {debug && (
             <aside className="debug-panel">
-              <strong>YURI LABS / DEBUG</strong>
+              <strong>{jenyWrapped.author.toUpperCase()} LABS / DEBUG</strong>
               <select
                 aria-label="Ir para história"
                 value={position.index}
@@ -340,19 +311,9 @@ export function StoryEngine() {
                 ))}
               </select>
               <span>
-                {scene.id} / {status} / {scene.duration}ms
+                {scene.id} / {status}
               </span>
-              <button onClick={() => setPaused((v) => !v)}>
-                {paused ? "Retomar" : "Pausar"}
-              </button>
             </aside>
-          )}
-          {music && (
-            <MusicDialog
-              selected={music}
-              onSelect={setMusic}
-              onClose={() => setMusic(null)}
-            />
           )}
         </main>
       </StoryAudioContext.Provider>
