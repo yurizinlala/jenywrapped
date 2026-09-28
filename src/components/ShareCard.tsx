@@ -39,14 +39,14 @@ async function exportCard() {
   text(data.person.nickname.toUpperCase(), 70, 210, 170);
   text("WRAPPED", 70, 345, 145);
   text(String(data.year), 76, 418, 38);
-  text("TOP PERSON", 76, 555, 28);
+  text("PESSOA FAVORITA DE YURI", 76, 555, 28);
   text(data.person.nickname.toUpperCase(), 65, 735, 200);
   const rows = [
-    ["TOP TRIP", data.share.topTrip],
+    ["VIAGEM FAVORITA", data.share.topTrip],
     ["COR DO ANO", data.share.color],
-    ["TRILHA DA VIAGEM", "Alinhamento Milenar — Jão"],
+    ["MÚSICA PARA VIAJAR", "Alinhamento Milenar — Jão"],
     [
-      `SECRET ${data.author.toUpperCase()} TRACK`,
+      `MÚSICA SECRETA DE ${data.author.toUpperCase()}`,
       "this is what falling in love",
     ],
     ["", "feels like — JVKE"],
@@ -60,9 +60,9 @@ async function exportCard() {
     text(value, 76, y, 43);
     y += label ? 92 : 60;
   }
-  text("CAOS DOMÉSTICO", 76, 1540, 25);
+  text("CHANCE DE CAOS DOMÉSTICO", 76, 1540, 25);
   text(data.share.chaos, 76, 1630, 86, "#dfff00");
-  text("GOSTAR DE VOCÊ", 580, 1540, 25);
+  text("CHANCE DE YURI AMAR VOCÊ", 580, 1540, 25);
   text(data.share.affection, 580, 1630, 86, "#dfff00");
   ctx.fillStyle = "#f7f4e9";
   ctx.fillRect(76, 1740, 928, 2);
@@ -97,12 +97,12 @@ export function ShareCard({ onReplay }: { onReplay: () => void }) {
         </header>
         <Burst />
         <div className="share-person">
-          <small>TOP PERSON</small>
+          <small>PESSOA FAVORITA DE YURI</small>
           <strong>{data.person.nickname}</strong>
         </div>
         <div className="share-pair">
           <div>
-            <small>TOP TRIP</small>
+            <small>VIAGEM FAVORITA</small>
             <b>{data.share.topTrip}</b>
           </div>
           <div>
@@ -111,13 +111,13 @@ export function ShareCard({ onReplay }: { onReplay: () => void }) {
           </div>
         </div>
         <div className="share-song">
-          <small>TRILHA DA VIAGEM</small>
+          <small>MÚSICA PARA VIAJAR</small>
           <b>
             Alinhamento Milenar <span>— Jão</span>
           </b>
         </div>
         <div className="share-song">
-          <small>SECRET {data.author.toUpperCase()} TRACK</small>
+          <small>MÚSICA SECRETA DE {data.author.toUpperCase()}</small>
           <b>
             this is what falling in love feels like <span>— JVKE</span>
           </b>
@@ -125,11 +125,11 @@ export function ShareCard({ onReplay }: { onReplay: () => void }) {
         <div className="share-numbers">
           <div>
             <strong>{data.share.chaos}</strong>
-            <small>CAOS DOMÉSTICO</small>
+            <small>CHANCE DE CAOS DOMÉSTICO</small>
           </div>
           <div>
             <strong>{data.share.affection}</strong>
-            <small>GOSTAR DE VOCÊ</small>
+            <small>CHANCE DE YURI AMAR VOCÊ</small>
           </div>
         </div>
         <footer>

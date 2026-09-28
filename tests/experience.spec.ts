@@ -46,7 +46,7 @@ test("manual navigation, no hold-to-pause, simplified controls, replay, PNG", as
   await page.route("https://open.spotify.com/**", (route) => route.abort());
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?debug=1");
-  await page.getByRole("button", { name: "começar retrospectiva" }).click();
+  await page.getByRole("button", { name: "começar maluquice" }).click();
   await expect(page.locator(".story-stage")).toHaveAttribute(
     "data-scene",
     "scan",
@@ -100,7 +100,7 @@ test("manual navigation, no hold-to-pause, simplified controls, replay, PNG", as
   );
   await page.getByLabel("Próxima história", { exact: true }).click();
   await expect(page.locator(".song-beat")).toHaveText(
-    "essa lembrava você antes.",
+    "essa lembrava você antes mesmo de tocar.",
   );
   await expect(page.locator(".toolbar-actions button")).toHaveCount(2);
   await expect(page.locator(".chapter-name")).toHaveCount(0);
@@ -203,7 +203,7 @@ test("reduced motion and touch swipe", async ({ browser }) => {
     touchPoints: [],
   });
   await expect(page.locator(".song-beat")).toHaveText(
-    "essa lembrava você antes.",
+    "essa lembrava você antes mesmo de tocar.",
   );
   await context.close();
 });

@@ -39,20 +39,12 @@ export function SceneContent({
           </h1>
           <div className="cover-label">
             <span>ESPECIALMENTE FEITO PRA</span>
-            <span>VOCÊ. SIM, VOCÊ.</span>
           </div>
           <div className="cover-word">
             <span>{jenyWrapped.person.nickname.toUpperCase()}</span>
             <Burst className="cover-burst" />
           </div>
-          <div className="wrapped-word">
-            WRAPPED
-            <span className="edition">
-              EDIÇÃO
-              <br />
-              {jenyWrapped.year}
-            </span>
-          </div>
+          <div className="wrapped-word">WRAPPED</div>
           <div className="cover-art" aria-hidden="true">
             <div className="cover-orbit" />
             <div className="cover-disc">
@@ -71,12 +63,9 @@ export function SceneContent({
           <div className="cover-bottom">
             <p>{jenyWrapped.intro}</p>
             <button className="start-button" onClick={onStart}>
-              <span>começar retrospectiva</span>
+              <span>começar maluquice</span>
               <span aria-hidden="true">↗</span>
             </button>
-            <small>
-              FEITO POR {jenyWrapped.author.toUpperCase()} · ZERO IMPARCIALIDADE
-            </small>
           </div>
         </div>
       );
@@ -84,12 +73,12 @@ export function SceneContent({
       return (
         <div className="scene-content scan-content">
           <div className="memory-reel">
-            <span>SE EU REBOBINAR ESSE ANO…</span>
+            <span>SE EU VOLTAR NESSE ANO…</span>
             {[
               "as caronas.",
-              "os chocolates.",
+              "os biscoitos de Nutella.",
               "as músicas.",
-              "as risadas sem motivo.",
+              "as risadas idiotas.",
             ].map((s, i) => (
               <p key={s} style={{ animationDelay: `${i * 0.65}s` }}>
                 <span>↗</span>
@@ -155,8 +144,8 @@ export function SceneContent({
               </motion.div>
             ))}
           </div>
-          <div className="stamp">aham.</div>
-          <small>e eu ainda chamava de “só amizade”.</small>
+          <div className="stamp">aiai.</div>
+          <small>carrapato não tem pai.</small>
         </div>
       );
     case "nickname":
@@ -165,11 +154,11 @@ export function SceneContent({
           <span className="scene-kicker">{scene.kicker}</span>
           <Burst className="nickname-burst" />
           <div className="nickname-card">
-            <span>✦ apelido nº 001</span>
+            <span>✦ apelido nº 999.014.179</span>
             <KineticText text={scene.title} />
             <small>{scene.note}</small>
           </div>
-          <p>coisa minha. coisa nossa.</p>
+          <p>picuinha minha. coisa nossa.</p>
         </div>
       );
     case "chaos":
@@ -235,7 +224,10 @@ export function SceneContent({
           </motion.div>
           <KineticText text={scene.title} />
           <p>{scene.note}</p>
-          <small>NUNCA SERÁ ESQUECIDA.</small>
+          <small>
+            ★ 21/08/2026
+            <br />✞ 15/09/2026
+          </small>
         </div>
       );
     case "music":
@@ -243,7 +235,7 @@ export function SceneContent({
         <div className="scene-content music-content">
           <span className="scene-kicker">{scene.kicker}</span>
           <div className="orbit-records" aria-hidden="true">
-            {jenyWrapped.songs.map((s, i) => (
+            {jenyWrapped.songs.slice(0, 5).map((s, i) => (
               <motion.div
                 layoutId={i === 2 ? "music-disc" : undefined}
                 key={s.id}
@@ -267,7 +259,7 @@ export function SceneContent({
         <div className="scene-content song-content anjos-content">
           <SoundRings />
           <ShapeField kind="arches" />
-          <span className="scene-kicker">ANTES MESMO DE VIRAR NÓS</span>
+          <span className="scene-kicker">&quot;SINTO COMO OS...&quot;</span>
           <KineticText text={scene.title} />
           <BeatText text={scene.beats?.[beat] ?? ""} />
         </div>
@@ -282,7 +274,6 @@ export function SceneContent({
             <Burst />
           </div>
           <div className="secret-confession">
-            <span>“é só uma música.”</span>
             <KineticText text={scene.title} />
           </div>
           <BeatText text={scene.note ?? ""} />
@@ -302,7 +293,9 @@ export function SceneContent({
             <i />
             <i />
           </div>
-          <span className="scene-kicker">COR DO ANO / COR FAVORITA DELA</span>
+          <span className="scene-kicker">
+            &quot;UM DIZER ASSIM, O AMOR É...&quot;
+          </span>
           <KineticText text={scene.title} />
           <BeatText text={scene.beats?.[beat] ?? ""} />
         </div>
@@ -370,7 +363,7 @@ export function SceneContent({
             <i />
             <span />
           </div>
-          <span className="scene-kicker">{scene.note} · HORA CERTA.</span>
+          <span className="scene-kicker">{scene.note}</span>
           <KineticText text={scene.title} />
           <BeatText text={scene.beats?.[beat] ?? ""} />
         </div>
@@ -462,7 +455,7 @@ export function SceneContent({
     case "letter":
       return (
         <div className="scene-content letter-content">
-          <span className="scene-kicker">ESSA PARTE NÃO É BRINCADEIRA.</span>
+          <span className="scene-kicker">CARTA FINAL</span>
           <h1>{scene.title}</h1>
           <motion.p
             className="letter-text"

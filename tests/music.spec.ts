@@ -128,7 +128,7 @@ test("sound cues accompany music and obey mute", async ({ page }) => {
   );
   await page.goto("/?debug=1");
   expect(await starts()).toBe(0);
-  await page.getByRole("button", { name: "começar retrospectiva" }).click();
+  await page.getByRole("button", { name: "começar maluquice" }).click();
   await expect.poll(starts).toBeGreaterThan(0);
   await page.getByLabel("Desativar som", { exact: true }).click();
   const mutedCount = await starts();
@@ -169,7 +169,7 @@ test("reduced motion hydrates without mismatched markup", async ({ page }) => {
   });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.getByRole("button", { name: "começar retrospectiva" }).click();
+  await page.getByRole("button", { name: "começar maluquice" }).click();
   await expect(page.locator(".story-stage")).toHaveAttribute(
     "data-status",
     "waiting",

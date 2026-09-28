@@ -44,14 +44,14 @@ try {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(`${origin}${basePath}/?debug=1`);
-  await page.getByRole("button", { name: "começar retrospectiva" }).waitFor();
+  await page.getByRole("button", { name: "começar maluquice" }).waitFor();
   assert.equal(await page.locator(".debug-panel").count(), 0);
   assert.equal(await page.locator(".toolbar-actions button").count(), 2);
   assert.equal(await page.locator(".chapter-name").count(), 0);
   const icon = await page.locator('link[rel="icon"]').getAttribute("href");
   assert.equal(icon, `${basePath}/icon.svg`);
   assert.equal((await page.request.get(`${origin}${icon}`)).status(), 200);
-  await page.getByRole("button", { name: "começar retrospectiva" }).click();
+  await page.getByRole("button", { name: "começar maluquice" }).click();
   await page.waitForTimeout(900);
   await page.waitForTimeout(7500);
   assert.equal(
