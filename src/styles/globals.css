@@ -229,6 +229,26 @@ button svg {
   letter-spacing: 0;
   margin-left: 7px;
 }
+.music-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.music-indicator > span {
+  font-size: 14px;
+  line-height: 1;
+}
+.music-indicator[data-muted="true"] {
+  border-style: dashed;
+}
 .toolbar-actions {
   display: flex;
   pointer-events: auto;

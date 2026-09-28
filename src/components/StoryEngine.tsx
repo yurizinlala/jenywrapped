@@ -230,6 +230,21 @@ export function StoryEngine() {
                   <span>✳</span>W{" "}
                   <i>/ {String(position.index).padStart(2, "0")}</i>
                 </span>
+                {track && (
+                  <span
+                    className="music-indicator"
+                    data-muted={!sound}
+                    role="status"
+                    aria-label={
+                      sound
+                        ? "Este story tem música"
+                        : "Este story tem música. Som desativado"
+                    }
+                  >
+                    <span aria-hidden="true">♫</span>
+                    {sound ? "música" : "música · mudo"}
+                  </span>
+                )}
                 <div className="toolbar-actions">
                   <button
                     aria-label={sound ? "Desativar som" : "Ativar som"}
