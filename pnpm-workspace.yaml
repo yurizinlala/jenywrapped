@@ -1,0 +1,4 @@
+allowBuilds:
+  unrs-resolver: true
+# Scripts run against installed dependencies; installation is an explicit step.
+verifyDepsBeforeRun: false
